@@ -27,7 +27,7 @@ func TestJSONEncodeDecode(t *testing.T) {
 			MetaData: md,
 		}
 
-		data, err = JSONPublisherEncoder{}.EncodePayload(p)
+		data, err = JSONMsgPayloadEncoder{}.EncodePayload(p)
 		assert.NoError(err)
 	}
 
@@ -37,7 +37,7 @@ func TestJSONEncodeDecode(t *testing.T) {
 		p := &MsgPayload{
 			Msg: &m,
 		}
-		err = JSONSubscriberEncoder{}.DecodePayload(data, p)
+		err = JSONMsgPayloadDecoder{}.DecodePayload(data, p)
 		assert.NoError(err)
 
 		assert.Equal(msg.Seconds, m.Seconds)
@@ -49,7 +49,7 @@ func TestJSONEncodeDecode(t *testing.T) {
 	{
 		p := &MsgPayload{}
 		assert.Panics(func() {
-			JSONSubscriberEncoder{}.DecodePayload(data, p)
+			JSONMsgPayloadDecoder{}.DecodePayload(data, p)
 		})
 	}
 }

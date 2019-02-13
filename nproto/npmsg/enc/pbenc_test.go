@@ -26,7 +26,7 @@ func TestPBEncodeDecode(t *testing.T) {
 			MetaData: md,
 		}
 
-		data, err = PBPublisherEncoder{}.EncodePayload(p)
+		data, err = PBMsgPayloadEncoder{}.EncodePayload(p)
 		assert.NoError(err)
 	}
 
@@ -36,7 +36,7 @@ func TestPBEncodeDecode(t *testing.T) {
 		p := &MsgPayload{
 			Msg: &m,
 		}
-		err = PBSubscriberEncoder{}.DecodePayload(data, p)
+		err = PBMsgPayloadDecoder{}.DecodePayload(data, p)
 		assert.NoError(err)
 
 		assert.Equal(msg.Seconds, m.Seconds)
@@ -48,7 +48,7 @@ func TestPBEncodeDecode(t *testing.T) {
 	{
 		p := &MsgPayload{}
 		assert.Panics(func() {
-			PBSubscriberEncoder{}.DecodePayload(data, p)
+			PBMsgPayloadDecoder{}.DecodePayload(data, p)
 		})
 	}
 }

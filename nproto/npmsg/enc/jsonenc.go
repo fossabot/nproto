@@ -9,11 +9,11 @@ import (
 	"github.com/huangjunwen/nproto/nproto"
 )
 
-// JSONPublisherEncoder is MsgPublisherEncoder using json encoding.
-type JSONPublisherEncoder struct{}
+// JSONMsgPayloadEncoder is MsgPayloadEncoder using json encoding.
+type JSONMsgPayloadEncoder struct{}
 
-// JSONSubscriberEncoder is MsgSubscriberEncoder using json encoding.
-type JSONSubscriberEncoder struct{}
+// JSONMsgPayloadDecoder is MsgPayloadDecoder using json encoding.
+type JSONMsgPayloadDecoder struct{}
 
 type JSONPayload struct {
 	Msg      json.RawMessage `json:"msg"`
@@ -21,8 +21,8 @@ type JSONPayload struct {
 }
 
 var (
-	_ MsgPublisherEncoder  = JSONPublisherEncoder{}
-	_ MsgSubscriberEncoder = JSONSubscriberEncoder{}
+	_ MsgPayloadEncoder = JSONMsgPayloadEncoder{}
+	_ MsgPayloadDecoder = JSONMsgPayloadDecoder{}
 )
 
 var (
@@ -34,8 +34,8 @@ var (
 	}
 )
 
-// EncodePayload implements MsgPublisherEncoder interface.
-func (e JSONPublisherEncoder) EncodePayload(payload *MsgPayload) ([]byte, error) {
+// EncodePayload implements MsgPayloadEncoder interface.
+func (e JSONMsgPayloadEncoder) EncodePayload(payload *MsgPayload) ([]byte, error) {
 	p := &JSONPayload{}
 
 	// Encode msg.
@@ -52,8 +52,8 @@ func (e JSONPublisherEncoder) EncodePayload(payload *MsgPayload) ([]byte, error)
 	return json.Marshal(p)
 }
 
-// DecodePayload implements MsgSubscriberEncoder interface.
-func (e JSONSubscriberEncoder) DecodePayload(data []byte, payload *MsgPayload) error {
+// DecodePayload implements MsgPayloadDecoder interface.
+func (e JSONMsgPayloadDecoder) DecodePayload(data []byte, payload *MsgPayload) error {
 	// Decode payload.
 	p := &JSONPayload{}
 	if err := json.Unmarshal(data, p); err != nil {

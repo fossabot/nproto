@@ -8,19 +8,19 @@ import (
 	"github.com/huangjunwen/nproto/nproto"
 )
 
-// PBPublisherEncoder is MsgPublisherEncoder using protobuf encoding.
-type PBPublisherEncoder struct{}
+// PBMsgPayloadEncoder is MsgPayloadEncoder using protobuf encoding.
+type PBMsgPayloadEncoder struct{}
 
-// PBSubscriberEncoder is MsgSubscriberEncoder using protobuf encoding.
-type PBSubscriberEncoder struct{}
+// PBMsgPayloadDecoder is MsgPayloadDecoder using protobuf encoding.
+type PBMsgPayloadDecoder struct{}
 
 var (
-	_ MsgPublisherEncoder  = PBPublisherEncoder{}
-	_ MsgSubscriberEncoder = PBSubscriberEncoder{}
+	_ MsgPayloadEncoder = PBMsgPayloadEncoder{}
+	_ MsgPayloadDecoder = PBMsgPayloadDecoder{}
 )
 
-// EncodePayload implements MsgPublisherEncoder interface.
-func (e PBPublisherEncoder) EncodePayload(payload *MsgPayload) ([]byte, error) {
+// EncodePayload implements MsgPayloadEncoder interface.
+func (e PBMsgPayloadEncoder) EncodePayload(payload *MsgPayload) ([]byte, error) {
 	var err error
 	p := &PBPayload{}
 
@@ -42,8 +42,8 @@ func (e PBPublisherEncoder) EncodePayload(payload *MsgPayload) ([]byte, error) {
 	return proto.Marshal(p)
 }
 
-// DecodePayload implements MsgSubscriberEncoder interface.
-func (e PBSubscriberEncoder) DecodePayload(data []byte, payload *MsgPayload) error {
+// DecodePayload implements MsgPayloadDecoder interface.
+func (e PBMsgPayloadDecoder) DecodePayload(data []byte, payload *MsgPayload) error {
 	// Decode payload.
 	p := &PBPayload{}
 	if err := proto.Unmarshal(data, p); err != nil {

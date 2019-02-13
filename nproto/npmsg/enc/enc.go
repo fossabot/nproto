@@ -6,14 +6,14 @@ import (
 	"github.com/huangjunwen/nproto/nproto"
 )
 
-// MsgPublisherEncoder is the publisher-side encoder.
-type MsgPublisherEncoder interface {
+// MsgPayloadEncoder is used to encode MsgPayload.
+type MsgPayloadEncoder interface {
 	// EncodePayload encodes payload to data.
 	EncodePayload(payload *MsgPayload) ([]byte, error)
 }
 
-// MsgSubscriberEncoder is the subscriber-side encoder.
-type MsgSubscriberEncoder interface {
+// MsgPayloadDecoder is used to decode MsgPayload.
+type MsgPayloadDecoder interface {
 	// DecodePayloa decodes payload from data.
 	DecodePayload(data []byte, payload *MsgPayload) error
 }
