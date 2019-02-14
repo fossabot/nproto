@@ -1,7 +1,6 @@
 package durconn
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"io/ioutil"
@@ -11,6 +10,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/ptypes/empty"
+	"github.com/golang/protobuf/ptypes/wrappers"
 	"github.com/huangjunwen/tstsvc"
 	tststan "github.com/huangjunwen/tstsvc/stan"
 	"github.com/nats-io/go-nats"
@@ -421,7 +423,8 @@ func TestPubSub(t *testing.T) {
 		err := dc.Subscribe(
 			"sub.*",
 			"q1",
-			func(_ context.Context, _ []byte) error { return nil },
+			func() proto.Message { return &empty.Empty{} },
+			func(_ context.Context, _ proto.Message) error { return nil },
 			SubOptRetryWait(time.Second),
 		)
 		assert.NoError(err)
@@ -431,8 +434,9 @@ func TestPubSub(t *testing.T) {
 	var (
 		testSubject = "sub.sub"
 		testQueue   = "qq"
-		goodData    = []byte("good")
-		badData     = []byte("bad")
+		newMsg      = func() proto.Message { return &wrappers.BoolValue{} }
+		goodMsg     = &wrappers.BoolValue{Value: true}
+		badMsg      = &wrappers.BoolValue{Value: false}
 	)
 
 	subc := make(chan struct{})
@@ -444,19 +448,19 @@ func TestPubSub(t *testing.T) {
 		err := dc.Subscribe(
 			testSubject,
 			testQueue,
-			func(ctx context.Context, data []byte) error {
-				log.Printf("*** Handler called %+q %+q.\n", testSubject, data)
-				if bytes.Equal(data, goodData) {
+			newMsg,
+			func(ctx context.Context, msg proto.Message) error {
+				v := msg.(*wrappers.BoolValue)
+				log.Printf("*** Handler called %+q %v.\n", testSubject, v.Value)
+				if v.Value {
 					goodc <- struct{}{}
 					return nil
 				}
-				// NOTE: since returnning error will cause message redelivery.
-				// Don't block here.
 				select {
 				case badc <- struct{}{}:
 				default:
 				}
-				return errors.New("bad data")
+				return errors.New("bad msg")
 			},
 			SubOptSubscribeCb(subCb),
 			SubOptAckWait(time.Second), // Short ack wait results in fast redelivery.
@@ -467,26 +471,26 @@ func TestPubSub(t *testing.T) {
 		log.Printf("Subscribed: %v.\n", err)
 	}
 
-	// Publish good data.
+	// Publish good msg.
 	{
 		err := dc.Publish(context.Background(),
 			testSubject,
-			goodData,
+			goodMsg,
 		)
 		assert.NoError(err)
 		<-goodc
-		log.Printf("Publish good data: %v.\n", err)
+		log.Printf("Publish good msg: %v.\n", err)
 	}
 
-	// Publish bad data.
+	// Publish bad msg.
 	{
 		err := dc.Publish(context.Background(),
 			testSubject,
-			badData,
+			badMsg,
 		)
 		assert.NoError(err)
 		<-badc
-		log.Printf("Publish bad data: %v.\n", err)
+		log.Printf("Publish bad msg : %v.\n", err)
 	}
 
 	// First server gone.
@@ -517,6 +521,7 @@ func TestPubSub(t *testing.T) {
 	log.Printf("Subscribed again.\n")
 
 	// Wait some bad data redelivery.
+	<-badc
 	<-badc
 	<-badc
 	log.Printf("Bad data redelivery.\n")
@@ -586,6 +591,7 @@ func TestMultipleSub(t *testing.T) {
 	var (
 		testSubject = "sub2"
 		testQueue   = "q2"
+		newMsg      = func() proto.Message { return &empty.Empty{} }
 		sub1Called  = make(chan struct{})
 		sub2Called  = make(chan struct{})
 	)
@@ -599,7 +605,8 @@ func TestMultipleSub(t *testing.T) {
 		err := dc1.Subscribe(
 			testSubject,
 			testQueue,
-			func(ctx context.Context, data []byte) error {
+			newMsg,
+			func(ctx context.Context, msg proto.Message) error {
 				once.Do(func() {
 					close(sub1Called)
 				})
@@ -617,7 +624,7 @@ func TestMultipleSub(t *testing.T) {
 
 	// Now publish a message.
 	{
-		err := dc2.Publish(context.Background(), testSubject, []byte("xxxx"))
+		err := dc2.Publish(context.Background(), testSubject, &empty.Empty{})
 		if err != nil {
 			log.Panic(err)
 		}
@@ -640,7 +647,8 @@ func TestMultipleSub(t *testing.T) {
 		err := dc2.Subscribe(
 			testSubject,
 			testQueue,
-			func(ctx context.Context, data []byte) error {
+			newMsg,
+			func(ctx context.Context, msg proto.Message) error {
 				once.Do(func() {
 					close(sub2Called)
 				})
